@@ -11,13 +11,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const analyzeRoute = require('./routes/analyze');
+const analyzeAudioRoute = require('./routes/analyze-audio');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));  // Increased for base64 audio chunks
 
 // Request logging
 app.use((req, res, next) => {
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/analyze', analyzeRoute);
+app.use('/analyze-audio', analyzeAudioRoute);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -47,6 +49,7 @@ app.get('/', (req, res) => {
         description: 'Real-time voice phishing detection API',
         endpoints: {
             'POST /analyze': 'Analyze call transcript for scam intent',
+            'POST /analyze-audio': 'Analyze raw audio (STT + scam detection)',
             'GET /health': 'Health check'
         },
         usage: {
@@ -92,8 +95,9 @@ app.listen(PORT, () => {
     console.log(`  URL:  http://localhost:${PORT}`);
     console.log('═'.repeat(50));
     console.log('  Endpoints:');
-    console.log('  POST /analyze  - Analyze transcript');
-    console.log('  GET  /health   - Health check');
+    console.log('  POST /analyze        - Analyze text transcript');
+    console.log('  POST /analyze-audio  - Analyze audio (STT + scam)');
+    console.log('  GET  /health         - Health check');
     console.log('═'.repeat(50));
 });
 
