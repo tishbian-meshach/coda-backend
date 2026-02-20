@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
         
         console.log(`[ANALYZE] Received text (${text.length} chars): "${text.substring(0, 100)}..."`);
         
-        // Analyze with Grok API
+        // Analyze with Groq API
         const result = await analyzeWithGrok(text);
         
         const processingTime = Date.now() - startTime;
