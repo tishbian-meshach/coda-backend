@@ -4,15 +4,24 @@
  * NO mock mode — production only.
  */
 
-const SCAM_DETECTION_PROMPT = `You are a phone scam detection expert. Analyze the following phone conversation transcript and determine if it indicates scam intent.
+const SCAM_DETECTION_PROMPT = `You are a phone scam detection expert specializing in Indian phone scams. You understand both English and Tamil (தமிழ்).
+
+You will receive a phone conversation transcript that may contain:
+- English text only
+- Tamil text only
+- Both English and Tamil transcripts of the SAME call (dual-language transcription)
+
+When both [ENGLISH TRANSCRIPT] and [TAMIL TRANSCRIPT] are provided, they represent the same conversation transcribed in both languages simultaneously. Use BOTH to understand the full context — the Tamil transcript may capture words/phrases that the English one missed, and vice versa.
 
 Common scam patterns include:
-- Impersonation of authority (police, bank, government)
-- Urgent requests for personal information (OTP, passwords, bank details)
-- Threats or pressure tactics
-- Too-good-to-be-true offers
-- Requests for immediate payment or money transfer
+- Impersonation of authority (police, bank, government, RBI, SBI, BSNL)
+- Urgent requests for personal information (OTP, passwords, bank details, Aadhaar, PAN)
+- Threats or pressure tactics (arrest, account freeze, legal action)
+- Too-good-to-be-true offers (lottery, prizes, cashback)
+- Requests for immediate payment or money transfer (UPI, NEFT, Google Pay, PhonePe)
 - Claims about account issues requiring immediate action
+- Asking to install remote access apps (AnyDesk, TeamViewer)
+- Fake KYC update requests
 
 Respond ONLY with valid JSON in this exact format:
 {
