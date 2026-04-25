@@ -161,9 +161,10 @@ async function callGroqAPI(messages) {
 /**
  * Analyze text using Groq API for scam detection.
  * @param {string} text - Transcribed call text
+ * @param {string} responseLanguage - Optional language code for translated response
  * @returns {Promise<{intent: string, confidence: number, reason: string}>}
  */
-async function analyzeWithGrok(text) {
+async function analyzeWithGrok(text, responseLanguage) {
   if (GROQ_API_KEYS.length === 0) {
     console.error("[GROQ] No API keys configured!");
     throw new Error(
@@ -171,7 +172,13 @@ async function analyzeWithGrok(text) {
     );
   }
 
-  const prompt = SCAM_DETECTION_PROMPT.replace("{TEXT}", text);
+  // Add language instruction if responseLanguage is set
+  let langInstruction = '';
+  if (responseLanguage && responseLanguage.length >= 2) {
+    langInstruction = `\n\nIMPORTANT: Write the "reason" field in the language with code "${responseLanguage}". The intent and confidence fields must remain in English/numbers.`;
+  }
+
+  const prompt = SCAM_DETECTION_PROMPT.replace("{TEXT}", text) + langInstruction;
 
   console.log(
     `[GROQ] Analyzing ${text.length} chars: "${text.substring(0, 80)}..."`

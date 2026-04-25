@@ -1,7 +1,8 @@
 /**
  * CODA Backend - Analyze Route
  * POST /analyze - Analyzes call transcript for scam intent
- * Supports dual-language (English + Tamil) analysis.
+ * Supports dual-language (English + secondary) analysis.
+ * Supports responseLanguage for translated overlay descriptions.
  */
 
 const express = require('express');
@@ -17,20 +18,24 @@ const { analyzeWithGrok } = require('../services/grokService');
  * {
  *   "text": "legacy single-language field",
  *   "englishText": "English transcript",
- *   "tamilText": "Tamil transcript"
+ *   "tamilText": "Tamil transcript (backward compat)",
+ *   "secondaryText": "Secondary language transcript",
+ *   "secondaryLanguage": "Language code (e.g. hi, te, kn)",
+ *   "responseLanguage": "Language code for translated response reason"
  * }
  */
 router.post('/', async (req, res) => {
     const startTime = Date.now();
 
     try {
-        const { text, englishText, tamilText } = req.body;
+        const { text, englishText, tamilText, secondaryText, secondaryLanguage, responseLanguage } = req.body;
 
         // Build combined context
         const en = (englishText || text || '').trim();
-        const ta = (tamilText || '').trim();
+        const secondary = (secondaryText || tamilText || '').trim();
+        const secLang = secondaryLanguage || (tamilText ? 'Tamil' : '');
 
-        if (en.length < 5 && ta.length < 5) {
+        if (en.length < 5 && secondary.length < 5) {
             return res.json({
                 intent: 'SAFE',
                 confidence: 1.0,
@@ -40,18 +45,20 @@ router.post('/', async (req, res) => {
 
         // Build the text to send to Grok
         let combinedText;
-        if (ta.length > 0 && en.length > 0) {
-            combinedText = `[ENGLISH TRANSCRIPT]:\n${en}\n\n[TAMIL TRANSCRIPT]:\n${ta}`;
-            console.log(`[ANALYZE] Dual-language: EN(${en.length}) + TA(${ta.length}) chars`);
-        } else if (ta.length > 0) {
-            combinedText = `[TAMIL TRANSCRIPT]:\n${ta}`;
-            console.log(`[ANALYZE] Tamil only: ${ta.length} chars`);
+        if (secondary.length > 0 && en.length > 0) {
+            const langLabel = secLang.toUpperCase() || 'SECONDARY';
+            combinedText = `[ENGLISH TRANSCRIPT]:\n${en}\n\n[${langLabel} TRANSCRIPT]:\n${secondary}`;
+            console.log(`[ANALYZE] Dual-language: EN(${en.length}) + ${langLabel}(${secondary.length}) chars`);
+        } else if (secondary.length > 0) {
+            const langLabel = secLang.toUpperCase() || 'SECONDARY';
+            combinedText = `[${langLabel} TRANSCRIPT]:\n${secondary}`;
+            console.log(`[ANALYZE] ${langLabel} only: ${secondary.length} chars`);
         } else {
             combinedText = en;
             console.log(`[ANALYZE] English only: ${en.length} chars`);
         }
 
-        const result = await analyzeWithGrok(combinedText);
+        const result = await analyzeWithGrok(combinedText, responseLanguage);
 
         const processingTime = Date.now() - startTime;
         console.log(`[ANALYZE] Result: ${result.intent} (${result.confidence.toFixed(2)}) - ${processingTime}ms`);
